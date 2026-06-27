@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
@@ -27,7 +27,7 @@ class AppointmentToken(BaseModel):
     time_window: str = Field(...)
     language: str = Field(...)
     status: AppointmentStatus = Field(default=AppointmentStatus.PENDING)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     @field_validator("token_id")
     @classmethod

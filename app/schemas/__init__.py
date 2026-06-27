@@ -3,6 +3,7 @@ from app.schemas.patient import PatientInfo
 from app.schemas.appointment import AppointmentToken, AppointmentStatus
 from app.schemas.validation import ValidationStatus
 from app.schemas.state import AgentState
+from app.schemas.extraction import ExtractedPatientData, GuardrailResult
 
 __all__ = [
     "Language",
@@ -11,6 +12,6 @@ __all__ = [
     "AppointmentStatus",
     "ValidationStatus",
     "AgentState",
+    "ExtractedPatientData",
+    "GuardrailResult",
 ]
-
-
