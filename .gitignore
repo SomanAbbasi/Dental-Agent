@@ -1,0 +1,46 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment secrets - NEVER commit these
+.env
+.env.local
+.env.production
+*.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# VS Code
+.vscode/settings.json
+.vscode/launch.json
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+logs/
+*.log
+
+# Database files
+*.db
+*.sqlite
+data/slots/*.csv
+
+# FAISS index files (rebuilt from source)
+data/faiss_index/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Type checking
+.mypy_cache/
