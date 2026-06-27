@@ -1,0 +1,55 @@
+BRIGHTSMILE DENTAL CLINIC — OFFICIAL POLICIES
+
+=== APPOINTMENT BOOKING ===
+Appointments can be booked by calling the clinic or through our AI receptionist.
+Each patient receives a unique token number in the format D-XXX upon confirmation.
+Token numbers are assigned sequentially and cannot be transferred to another patient.
+Walk-in patients are accommodated based on slot availability after booked patients.
+
+=== CANCELLATION POLICY ===
+Appointments must be cancelled at least 2 hours before the scheduled time.
+Same-day cancellations with less than 2 hours notice are marked as late cancellations.
+Patients with 3 or more late cancellations may be asked to prepay for future appointments.
+To cancel, call the clinic directly at the reception number.
+
+=== MISSED APPOINTMENT POLICY ===
+If a patient misses their appointment without cancelling, it is marked as a no-show.
+After 2 no-shows, the patient must call the clinic to discuss rebooking.
+No-show slots are released to walk-in patients after 15 minutes past the scheduled time.
+
+=== EMERGENCY DENTAL CARE ===
+For dental emergencies such as severe pain, broken teeth, or facial swelling,
+call the clinic immediately and inform the receptionist it is an emergency.
+Emergency patients are seen on the same day whenever possible.
+If the clinic is closed, visit the nearest hospital emergency department.
+
+=== CLINIC HOURS ===
+Monday to Saturday: 9:00 AM to 7:00 PM
+Sunday: Closed
+Public holidays: Closed unless announced otherwise.
+Peak hours are 9:00 AM to 11:00 AM and 4:00 PM to 6:00 PM.
+
+=== PAYMENT POLICY ===
+Payment is due at the time of the appointment.
+Accepted methods: Cash, JazzCash, EasyPaisa, bank transfer.
+No insurance billing is handled at the clinic directly.
+Receipts are provided for all payments.
+
+=== PATIENT RECORDS ===
+Patient records are kept confidential and are not shared with third parties.
+Patients may request a copy of their records by visiting the clinic in person.
+Records are retained for a minimum of 5 years as per local health regulations.
+
+=== CHILDREN AND MINORS ===
+Patients under 18 must be accompanied by a parent or legal guardian.
+The guardian must provide consent before any treatment begins.
+
+=== COVID AND HYGIENE PROTOCOLS ===
+All staff wear masks and gloves during procedures.
+Treatment rooms are sanitized between every patient.
+Patients with active fever or respiratory symptoms are asked to reschedule.
+
+=== REFERRALS ===
+If a patient requires specialist care beyond general dentistry,
+the clinic will provide a written referral to the appropriate specialist.
+Referral fees are not charged.
