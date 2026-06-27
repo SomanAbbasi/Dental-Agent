@@ -5,6 +5,7 @@ target-version = ["py311"]
 [tool.ruff]
 line-length = 88
 target-version = "py311"
+
 select = ["E", "F", "W", "I", "N", "UP", "S", "B"]
 ignore = ["S101"]
 
@@ -20,3 +21,7 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 log_cli = true
 log_cli_level = "DEBUG"
+
+filterwarnings = [
+    "ignore::DeprecationWarning:langchain_community",
+]
