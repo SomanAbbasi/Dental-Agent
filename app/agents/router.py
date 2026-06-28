@@ -10,6 +10,18 @@ logger = get_logger(__name__)
 ABSOLUTE_MAX_RETRIES = 8
 
 
+def _already_answered_last_human(messages: list) -> bool:
+    """True if the latest AI message comes after the latest human message."""
+    last_human_idx = -1
+    last_ai_idx = -1
+    for i, msg in enumerate(messages):
+        if msg.__class__.__name__ == "HumanMessage":
+            last_human_idx = i
+        elif msg.__class__.__name__ == "AIMessage":
+            last_ai_idx = i
+    return last_human_idx >= 0 and last_ai_idx > last_human_idx
+
+
 def should_continue(state: AgentState) -> str:
     """
    
@@ -63,7 +75,7 @@ def should_continue(state: AgentState) -> str:
             last_human = msg.content
             break
 
-    if last_human and is_policy_question(last_human):
+    if last_human and is_policy_question(last_human) and not _already_answered_last_human(messages):
         logger.info("router_to_rag_policy", query=last_human[:50])
         return "rag_policy"
 

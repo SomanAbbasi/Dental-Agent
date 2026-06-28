@@ -27,7 +27,34 @@ HARDCODED_INJECTION_PATTERNS: list[str] = [
     "sudo",
     "override",
     "disregard",
+    "bypass your",
+    "forget everything",
+    "do anything now",
 ]
+
+INAPPROPRIATE_PATTERNS: list[str] = [
+    "fuck", "shit", "bitch", "asshole", "bastard", "dick",
+    "piss off", "shut up", "stupid bot", "idiot",
+    "kill you", "hate you", "useless",
+]
+
+
+def check_inappropriate_patterns(message: str) -> GuardrailResult | None:
+    """Block abusive or profane language."""
+    message_lower = message.lower().strip()
+    for pattern in INAPPROPRIATE_PATTERNS:
+        if pattern in message_lower:
+            logger.warning(
+                "inappropriate_language_blocked",
+                pattern=pattern,
+                message_preview=message[:80],
+            )
+            return GuardrailResult(
+                is_safe=False,
+                threat_type="abusive_language",
+                confidence=1.0,
+            )
+    return None
 
 
 def check_hardcoded_patterns(message: str) -> GuardrailResult | None:
@@ -69,6 +96,10 @@ def classify_message(message: str) -> GuardrailResult:
     hardcoded_result = check_hardcoded_patterns(message)
     if hardcoded_result is not None:
         return hardcoded_result
+
+    inappropriate_result = check_inappropriate_patterns(message)
+    if inappropriate_result is not None:
+        return inappropriate_result
 
     # Layer 2: LLM classification
     llm = get_classifier_llm()

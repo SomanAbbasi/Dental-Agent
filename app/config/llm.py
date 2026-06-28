@@ -22,7 +22,7 @@ def get_llm() -> ChatOpenAI:
         base_url=settings.openrouter_base_url,
         temperature=0.0,
         max_retries=3,
-        timeout=30,
+        timeout=90,
         model_kwargs={
             "extra_headers": {
                 "HTTP-Referer": "https://brightsmile-dental.com",
@@ -42,7 +42,7 @@ def get_classifier_llm() -> ChatOpenAI:
         base_url=settings.openrouter_base_url,
         temperature=0.0,
         max_retries=2,
-        timeout=15,
+        timeout=60,
         model_kwargs={
             "extra_headers": {
                 "HTTP-Referer": "https://brightsmile-dental.com",

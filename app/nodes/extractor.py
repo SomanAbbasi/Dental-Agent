@@ -1,5 +1,5 @@
 from tenacity import retry, stop_after_attempt, wait_exponential
-from langchain_core.messages import BaseMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 from app.config.llm import get_llm
 from app.config.settings import get_settings
 from app.config.logger import get_logger
@@ -33,10 +33,10 @@ def extract_patient_data(
     settings = get_settings()
     llm = get_llm()
 
-    # Bind the Pydantic schema — LLM must match this exactly
+    # function_calling works with llama-3.3 on Groq; json_mode raises BadRequestError
     structured_llm = llm.with_structured_output(
         ExtractedPatientData,
-        method="json_mode",
+        method="function_calling",
     )
 
     history_text = "\n".join(
@@ -48,7 +48,7 @@ def extract_patient_data(
 
     logger.debug("extracting_patient_data", history_length=len(messages))
 
-    result = structured_llm.invoke(prompt)
+    result = structured_llm.invoke([HumanMessage(content=prompt)])
 
     logger.info(
         "extraction_complete",

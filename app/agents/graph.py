@@ -94,7 +94,10 @@ def build_graph():
 
     # Compile with in-memory checkpointer for multi-turn state
     memory = MemorySaver()
-    graph = builder.compile(checkpointer=memory)
+    graph = builder.compile(
+        checkpointer=memory,
+        interrupt_after=["language_gate", "info_extractor", "rag_policy", "guardrail", "db_writer"],
+    )
 
     logger.info("langgraph_compiled_successfully")
     return graph

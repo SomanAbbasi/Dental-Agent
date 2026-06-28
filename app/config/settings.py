@@ -53,12 +53,18 @@ class Settings(BaseSettings):
         return v.upper()
 
     
+    # @field_validator("openrouter_model")
+    # @classmethod
+    # def validate_model(cls, v: str) -> str:
+    #     if "/" not in v:
+    #         raise ValueError("Model must be in format 'provider/model-name'")
+    #     return v
     @field_validator("openrouter_model")
     @classmethod
     def validate_model(cls, v: str) -> str:
-        if "/" not in v:
-            raise ValueError("Model must be in format 'provider/model-name'")
-        return v
+        if not v or len(v.strip()) < 3:
+            raise ValueError("Model name cannot be empty")
+        return v.strip()
     
 
 @lru_cache(maxsize=1)
