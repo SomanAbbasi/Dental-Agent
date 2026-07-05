@@ -13,6 +13,12 @@ Return null for any field not yet mentioned.
 Do not invent or guess any values.
 Detect the language from the messages.
 
+For time_window:
+- Preserve the user's intent exactly, including relative phrases like "tomorrow",
+  "next Monday", "one week from now", "in 3 days", or "day after tomorrow".
+- Include any mentioned clock time such as "10 AM" or "4:30 PM".
+- Do not convert relative dates yourself — return the user's wording.
+
 Conversation:
 {history}
 """

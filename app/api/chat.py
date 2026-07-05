@@ -13,13 +13,43 @@ from app.config.logger import get_logger
 logger = get_logger(__name__)
 router = APIRouter()
 
+_AUTO_CONTINUE_STATUSES = {
+    ValidationStatus.CONFIRMED,
+    str(ValidationStatus.CONFIRMED),
+}
+
+
+def _auto_finish_confirmed_booking(graph, config: dict, state: dict) -> dict:
+    """
+    After the user confirms, continue through guardrail + db_writer
+    in the same request instead of requiring another message.
+    """
+    current = state
+    for _ in range(4):
+        snapshot = graph.get_state(config)
+        pending = snapshot.next if snapshot else ()
+        status = current.get("validation_status", ValidationStatus.NOT_STARTED)
+        status_str = str(status)
+
+        if status_str == ValidationStatus.COMPLETE:
+            return current
+
+        if not pending:
+            break
+
+        if status_str in _AUTO_CONTINUE_STATUSES or "guardrail" in pending or "db_writer" in pending:
+            logger.info("auto_continuing_booking", status=status_str, pending=list(pending))
+            current = graph.invoke(None, config=config)
+            continue
+        break
+
+    return current
+
 
 def _run_graph(message: str, thread_id: str) -> dict:
- 
     graph = build_graph()
     config = {"configurable": {"thread_id": thread_id}}
 
-    # Get current state to check if conversation already started
     try:
         current_state = graph.get_state(config)
         existing_values = current_state.values if current_state else {}
@@ -28,44 +58,31 @@ def _run_graph(message: str, thread_id: str) -> dict:
         existing_values = {}
         pending_nodes = ()
 
-    # If graph paused at an interrupt, merge the new message and resume
     if pending_nodes:
         graph.update_state(
             config,
             {"messages": [HumanMessage(content=message)]},
         )
         final_state = graph.invoke(None, config=config)
-        return final_state
+    else:
+        graph_input = {"messages": [HumanMessage(content=message)]}
+        if not existing_values:
+            graph_input.update({
+                "language": Language.UNKNOWN,
+                "patient_info": PatientInfo(),
+                "validation_status": ValidationStatus.NOT_STARTED,
+                "current_token": None,
+                "retry_count": 0,
+                "is_blocked": False,
+                "rag_context": None,
+            })
+        final_state = graph.invoke(graph_input, config=config)
 
-    # Build input — only pass the new human message
-    # LangGraph merges it with existing message history via add_messages reducer
-    graph_input = {
-        "messages": [HumanMessage(content=message)],
-    }
-
-    # If first turn, initialize all state fields
-    if not existing_values:
-        graph_input.update({
-            "language": Language.UNKNOWN,
-            "patient_info": PatientInfo(),
-            "validation_status": ValidationStatus.NOT_STARTED,
-            "current_token": None,
-            "retry_count": 0,
-            "is_blocked": False,
-            "rag_context": None,
-        })
-
-    final_state = graph.invoke(graph_input, config=config)
-    return final_state
+    return _auto_finish_confirmed_booking(graph, config, final_state)
 
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """
-    Single-turn chat endpoint.
-    Send a message, get a reply.
-    The thread_id links messages into a conversation.
-    """
     logger.info(
         "chat_request",
         thread_id=request.thread_id,
@@ -86,17 +103,11 @@ async def chat(request: ChatRequest):
             detail=f"Agent error: {str(e)}",
         )
 
-    # Extract the last AI message as the reply
     messages = final_state.get("messages", [])
-    ai_messages = [
-        m for m in messages
-        if m.__class__.__name__ == "AIMessage"
-    ]
+    ai_messages = [m for m in messages if m.__class__.__name__ == "AIMessage"]
     reply = ai_messages[-1].content if ai_messages else "I'm sorry, please try again."
 
-    validation_status = final_state.get(
-        "validation_status", ValidationStatus.NOT_STARTED
-    )
+    validation_status = final_state.get("validation_status", ValidationStatus.NOT_STARTED)
     language = final_state.get("language", Language.UNKNOWN)
     current_token = final_state.get("current_token")
     patient_info = final_state.get("patient_info")
@@ -113,11 +124,6 @@ async def chat(request: ChatRequest):
 
 @router.websocket("/ws/{thread_id}")
 async def websocket_chat(websocket: WebSocket, thread_id: str):
-    """
-    WebSocket endpoint for streaming multi-turn conversations.
-    Each message sent over the socket gets a reply over the same socket.
-    thread_id in the URL keeps the conversation state linked.
-    """
     await websocket.accept()
     logger.info("websocket_connected", thread_id=thread_id)
 
@@ -128,11 +134,7 @@ async def websocket_chat(websocket: WebSocket, thread_id: str):
             if not message.strip():
                 continue
 
-            logger.debug(
-                "websocket_message",
-                thread_id=thread_id,
-                preview=message[:50],
-            )
+            logger.debug("websocket_message", thread_id=thread_id, preview=message[:50])
 
             try:
                 final_state = await asyncio.get_event_loop().run_in_executor(
@@ -143,19 +145,10 @@ async def websocket_chat(websocket: WebSocket, thread_id: str):
                 )
 
                 messages = final_state.get("messages", [])
-                ai_messages = [
-                    m for m in messages
-                    if m.__class__.__name__ == "AIMessage"
-                ]
-                reply = (
-                    ai_messages[-1].content
-                    if ai_messages
-                    else "I'm sorry, please try again."
-                )
+                ai_messages = [m for m in messages if m.__class__.__name__ == "AIMessage"]
+                reply = ai_messages[-1].content if ai_messages else "I'm sorry, please try again."
 
-                validation_status = final_state.get(
-                    "validation_status", ValidationStatus.NOT_STARTED
-                )
+                validation_status = final_state.get("validation_status", ValidationStatus.NOT_STARTED)
                 current_token = final_state.get("current_token")
 
                 await websocket.send_json({
@@ -166,23 +159,18 @@ async def websocket_chat(websocket: WebSocket, thread_id: str):
                     "is_complete": str(validation_status) == ValidationStatus.COMPLETE,
                 })
 
-                # Close gracefully when booking is complete
                 if str(validation_status) == ValidationStatus.COMPLETE:
-                    logger.info(
-                        "websocket_booking_complete",
-                        thread_id=thread_id,
-                    )
+                    logger.info("websocket_booking_complete", thread_id=thread_id)
                     await websocket.close()
                     break
 
             except Exception as e:
-                logger.error(
-                    "websocket_graph_error",
-                    error=str(e),
-                    thread_id=thread_id,
-                )
+                logger.error("websocket_graph_error", error=str(e), thread_id=thread_id)
                 await websocket.send_json({
-                    "reply": "I'm sorry, something went wrong. Please try again.",
+                    "reply": (
+                        "I'm sorry, something went wrong while processing your request. "
+                        "Please try again or call the clinic directly."
+                    ),
                     "validation_status": "error",
                     "language": "unknown",
                     "token_id": None,

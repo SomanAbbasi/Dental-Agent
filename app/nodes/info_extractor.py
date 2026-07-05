@@ -18,6 +18,8 @@ from app.utils.availability import (
     get_availability_response,
     validate_time_window,
     is_availability_question,
+    normalize_time_window,
+    parse_appointment_date,
 )
 from app.config.settings import get_settings
 from app.config.llm import get_llm
@@ -150,10 +152,11 @@ def info_extractor_node(state: AgentState) -> dict:
                     symptoms=current_info.symptoms,
                     time_window=None,
                 )
+            follow_up = _booking_follow_up(cleared_info, preserved_status)
             return {
                 "patient_info": cleared_info,
                 "validation_status": preserved_status,
-                "messages": [AIMessage(content=avail_reply)],
+                "messages": [AIMessage(content=f"{avail_reply}{follow_up}")],
                 "retry_count": retry_count,
             }
 
@@ -187,7 +190,9 @@ def info_extractor_node(state: AgentState) -> dict:
 
     # Check if user is confirming or rejecting readback
     if state.get("validation_status") == ValidationStatus.AWAITING_CONFIRMATION:
-        if _is_simple_confirmation(last_human) or extracted.is_confirmation:
+        if _is_simple_confirmation(last_human) or (
+            extracted.is_confirmation and not is_availability_question(last_human)
+        ):
             logger.info("user_confirmed_details")
             return {
                 "validation_status": ValidationStatus.CONFIRMED,
@@ -215,12 +220,17 @@ def info_extractor_node(state: AgentState) -> dict:
             }
 
     # Merge newly extracted data into existing PatientInfo
+    raw_time = extracted.time_window or current_info.time_window
+    if last_human and parse_appointment_date(last_human):
+        raw_time = extracted.time_window or last_human
+    normalized_time = normalize_time_window(raw_time) if raw_time else None
+
     try:
         merged = PatientInfo(
             name=extracted.name or current_info.name,
             phone=extracted.phone or current_info.phone,
             symptoms=extracted.symptoms or current_info.symptoms,
-            time_window=extracted.time_window or current_info.time_window,
+            time_window=normalized_time,
         )
     except ValidationError as e:
         logger.warning("merge_validation_error", error=str(e))
@@ -277,6 +287,21 @@ def info_extractor_node(state: AgentState) -> dict:
         "messages": [AIMessage(content=response)],
         "retry_count": retry_count,
     }
+
+
+def _booking_follow_up(info: PatientInfo, status: ValidationStatus) -> str:
+    if status == ValidationStatus.AWAITING_CONFIRMATION and info.is_complete():
+        return "\n\nPlease reply yes to confirm your appointment or no to make changes."
+    missing = info.missing_fields()
+    if not missing:
+        return "\n\nShall I confirm this appointment for you?"
+    prompts = {
+        "name": "\n\nTo continue booking, please tell me your full name.",
+        "phone": "\n\nWhat phone number should we use for your appointment?",
+        "symptoms": "\n\nWhat is the reason for your visit?",
+        "time_window": "\n\nWhat date and time would you like for your appointment?",
+    }
+    return prompts.get(missing[0], "\n\nWould you like to continue booking your appointment?")
 
 
 def _is_simple_confirmation(text: str) -> bool:

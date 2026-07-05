@@ -3,8 +3,9 @@ langgraph>=0.2.55
 langchain>=0.3.7
 langchain-openai>=0.2.8
 langchain-community>=0.3.7
+langchain-huggingface>=0.1.2
 
-# Pydantic v2 - strict validation
+# Pydantic v2
 pydantic>=2.9.0
 pydantic-settings>=2.6.0
 
@@ -20,21 +21,6 @@ websockets>=13.1
 # Data layer
 pandas>=2.2.0
 numpy>=2.1.0
-
-# Security
-python-jose[cryptography]>=3.3.0
-slowapi>=0.1.9
-
-# Testing
-pytest>=8.3.0
-pytest-asyncio>=0.24.0
-pytest-cov>=6.0.0
-
-# Code quality
-black>=24.10.0
-ruff>=0.7.0
-mypy>=1.13.0
-pre-commit>=4.0.0
 
 # Utilities
 python-dotenv>=1.0.1

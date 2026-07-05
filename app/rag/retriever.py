@@ -49,11 +49,11 @@ def retrieve_policy(query: str) -> str | None:
         logger.info("no_results_returned", query=query[:80])
         return None
 
-    # Filter by similarity threshold
+    # Filter by similarity threshold (L2 distance — lower is better)
     relevant = [
         (doc, score)
         for doc, score in results
-        if score >= SIMILARITY_THRESHOLD
+        if score <= SIMILARITY_THRESHOLD
     ]
 
     if not relevant:
